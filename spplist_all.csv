@@ -1,0 +1,59 @@
+﻿taxon,common_name,sixletter_code,core_only,matrix,asteraceae_block,photosynthesis,functional_group,seeded
+Achillia millefolium,Yarrow,achmil,yes,,,,forb,yes
+Andropogon gerardii,Big Bluestem,andger,,yes,,C4,grass,yes
+Anemone canadense,Canada Anemone,anecan,,yes,,,forb,yes
+Anemone virginiana,Tall Thimble Weed,anevir,yes,,,,forb,yes
+Asclepias incarnata,Swamp Milkweed,ascinc,,yes,,,forb,yes
+Asclepias sullivantii,Sullivan's Milkweed,ascsul,yes,,,,forb,yes
+Asclepias tuberosa,Butterfly Milkweed,asctub,yes,,,,forb,yes
+Asclepias verticillata,whorled milkweed,ascver,yes,,,,forb,yes
+Astragalis canadensis,Canada Milk Vetch,astcan,yes,,,,legume,yes
+Baptisia alba,Wild White Indigo,bapalb,yes,,,,legume,yes
+Bouteloua curtipendula,Sideoats Grama,boucur,yes,,,C4,grass,yes
+Brickellia eupatorioides,False Boneset,brieup,,yes,,,forb,yes
+Carex bicknellii,Bicknell's Sedge,carbic,yes,,,,sedge,yes
+Carex brevior,Shortbeak Sedge,carbre,yes,,,,sedge,yes
+Carex vulpinoidea,Fox Sedge,carvul,,yes,,,sedge,yes
+Chamaecrista fasciculata,Partridge Pea,chafas,yes,,,,legume,yes
+Dalea candida,White Prairie Clover,dalcan,yes,,,,legume,yes
+Dalea purpurea,Purple Prairie Clover,dalpur,,yes,,,legume,yes
+Desmodium canadense,Showy Tick Trefoil,descan,yes,,,,legume,yes
+Echinacea pallida,Purple Coneflower,echpal,yes,,,,forb,yes
+Elymus canadensis,Canada Wild Rye,elycan,,yes,,C3,grass,yes
+Elymus virginicus,Virginia Wild Rye,elyvir,yes,,,C3,grass,yes
+Eryngium yuccifolium,Rattlesnake Master,eryyuc,yes,,,,forb,yes
+Euphorbia corollata,Flowering Spurge,eupcor,yes,,,,forb,yes
+Eupatorium perfoliatum,Common Boneset,eupper,yes,,7,,forb,yes
+Galium boreale,Northern Bedstraw,galbor,yes,,,,forb,yes
+Helianthus grosseseratus,Sawtooth Sunflower,helgro,yes,,5,,forb,yes
+Heliopsis helianthoides,Oxeye/False Sunflower,helhel,yes,,4,,forb,yes
+Helianthus maximilliana,Maximillian Sunflower,helmax,yes,,2,,forb,yes
+Helianthus pauciflorus,Rigid Sunflower,helpau,yes,,3,,forb,yes
+Hesperostipa spartea,Porcupine Grass,hesspa,yes,,,C3,grass,yes
+Heuchera richardsonii,Prairie Alumroot,heuric,yes,,,,forb,yes
+Lespedeza capitata,Roundheaded Bushclover,lescap,,yes,,,legume,yes
+Liatris aspera,Rough Blazing Star,liaasp,yes,,,,forb,yes
+Liatris pycnostachia,Prairie Blazing Star,liapyc,,yes,,,forb,yes
+Lobelia cardinalis,Cardinal Flower,lobcar,yes,,,,forb,yes
+Lobelia siphilitica,Great Blue Lobelia,lobsip,yes,,,,forb,yes
+Penstemon digitalis,Foxglove Penstemon,pendig,yes,,,,forb,yes
+Physostegia virginiana,Obedient Plant,phyvir,yes,,,,forb,yes
+Potentilla arguta,Tall/Prairie Cinquefoil,potarg,yes,,,,forb,yes
+Ratibida pinnata,Gray-headed Coneflower,ratpin,,yes,,,forb,yes
+Rudbeckia hirta,Blackeyed Susan,rudhir,yes,,,,forb,yes
+Rudbeckia subtomentosa,Sweet Blackeyed Susan,rudsub,yes,,8,,forb,yes
+Schzachyrium scoparium,Little Bluestem,schsco,,yes,,C4,grass,yes
+Silphium laciniatum,Compass Plant,sillac,yes,,1,,forb,yes
+Solidago rigida,Rough Goldenrod,solrig,yes,,,,forb,yes
+Solidago speciosa,Showy Goldenrod,solspe,yes,,,,forb,yes
+Sorghastrum nutans,Indian Grass,sornut,yes,,,C4,grass,yes
+Sporobolus clandestinatus,Rough Dropseed,spocla,,yes,,C4,grass,yes
+Sporobolus heterolepis,Prairie Dropseed,spohet,yes,,,C4,grass,yes
+Symphyotrichum azureus,Sky Blue Aster,symazu,yes,,,,forb,yes
+Symphyotrichum ericoides,Heath Aster,symeri,yes,,,,forb,yes
+Symphyotrichum laevis,Smooth Blue Aster,symlae,yes,,,,forb,yes
+Symphyotrichum novae-angliae,New England Aster,symnov,yes,,6,,forb,yes
+Vernonia fasciculata,Ironweed,verfas,yes,,,,forb,yes
+Verbena stricta,Hoary Vervain,verstr,yes,,,,forb,yes
+Veronicastrum virginicum,Culver's Root,vervir,yes,,,,forb,yes
+Zizia aurea,Golden Alexander,zizaur,yes,yes,,,forb,yes

@@ -1,0 +1,637 @@
+---
+title: 'Code Supplement - Allbee et al. Accepted '
+author: "Samantha Allbee, Haldre Rogers, and Lauren Sullivan"
+date: 'Last updated: `r Sys.Date()`'
+output:
+  html_document:
+    smart: no
+    theme: flatly
+    toc: true
+    toc_float: true
+---
+
+\Large
+This document lays out R code for all analyses and creates figures for "The effect of dispersal, herbivory, and competition on community assembly." (submitted 2021 to *Ecology*). Code was created by Samantha Allbee and Lauren Sullivan, please contact Samantha (samantha.allbee@gmail.com) or Lauren (llsull@msu.edu) with questions. 
+
+
+# Prolog
+
+```{r}
+# PROLOG   ##############################################################################
+
+# PURPOSE: Examines the role of dispersal in community assembly, and how it interacts with
+#             other important community assembly filters.  Fieldwork conducted at Oakridge
+#             Research and Education Prairie in 2019.
+#
+# AUTHORS:  Lauren Sullivan (sullivanll@missouri.edu) and 
+#             Samantha Allbee (samantha.allbee@gmail.com)
+# COLLAB:  Haldre Rodgers
+#
+# FILES:   "target_plant_movement.csv" - distance moved of 4 target species
+#          "target_plant_abundance.csv" - number of stems of 4 target species per plot
+#          "community_coverdata.csv" - m2 plot level data collected from the field
+#          "spplist_all.csv" - a list of all moved species and their traits
+#          "treatment_info_unique.csv" - unique treatment info for plots.
+#          "moved_species_ord.csv" - wide format data for ordination of moved species
+
+# PROLOG   ##############################################################################
+```
+
+# Libraries and Data
+
+```{r, eval=TRUE, echo=TRUE, warning=FALSE, message=FALSE}
+rm(list=ls())
+
+
+
+library(lme4)
+library(lmerTest)
+library(lsmeans)
+library(tidyverse)
+library(car)
+library(plot3D)
+library(bbmle)
+library(gridExtra)
+library(cowplot)
+library(vegan)
+library(goeveg)
+library(plyr)
+library(ggResidpanel)
+library(PerformanceAnalytics)
+
+
+
+disp <- read.csv("target_plant_movement.csv")
+dat <- read_csv("community_coverdata.csv")
+spp <- read_csv("spplist_all.csv")
+trt <- read_csv("treatment_info_unique.csv")
+t_abund <- read_csv("target_plant_abundance.csv")
+movedord <- read.csv("moved_species_ord.csv")
+coverord <- read.csv("all_species_ord.csv")
+
+
+dat <- merge(dat, spp, by=c("sixletter_code"))
+```
+# Target Plant Movement Analyses
+
+## Distance - Dispersal Kernels
+
+
+Here we examine the distance that the 4 target species moved and established away from the central high diversity cores both inside and outside the herbivore plots.
+
+RESULTS: We found species had different movement patterns. And while not significant, it is worth noting the interaction between herbivore exclusion and species as p = 0.09 to indicate that herbivores can have differential effects on species.
+
+
+```{r, eval=TRUE, echo=TRUE,  warning=FALSE,  message=FALSE, fig.height=4}
+
+disp$species <- factor(disp$species, levels = c("bapalb", "eryyuc", "pendig", "asteri"), 
+                      labels = c("B. alba", "E. yuccifolium", "P. digitalis", "S. ericoides"))
+
+disp$plot <- factor(disp$plot)
+
+######
+#
+# Figure S4 - density plot of movement distance of all species by herbivore treatment
+#
+######
+
+pdf(file="Fig_S4_herbivorekernels.pdf",width=7, height=7)
+
+ggplot(disp, aes(x=distance_from_edge, fill=trt, color=trt))+
+  geom_density(alpha = 0.5)+
+  theme_bw()+
+  theme(aspect.ratio=1)+
+  labs(x="Distance from Core Edge", y="Density")+
+  theme(text = element_text(size = 22))+
+  scale_fill_manual(values=c("gray25", "gray75"))+
+  scale_color_manual(values=c("gray25", "gray75"))
+
+dev.off()
+
+disp$trt <- factor(disp$trt, levels = c("herb", "no_herb"),
+                      labels = c("herbivores", "no herbivores"))
+
+
+#quantiles to explore how herbivores alter movement overall
+
+quantile(subset(disp, trt == "herbivores")$distance_from_edge, c(0.01, 0.05, 0.25, 0.5, 0.75, 0.95, 0.99))
+quantile(subset(disp, trt == "no herbivores")$distance_from_edge, c(0.01, 0.05, 0.25, 0.5, 0.75, 0.95, 0.99))
+
+
+######
+#
+# GLMER analysis of distance moved ~ treatment * species
+#
+######
+
+test1.gamma <- glm(distance_from_edge ~ trt + species, family = Gamma, data = disp)
+Anova(test1.gamma,  type = 3)
+
+#resid_panel(test1.gamma)
+
+
+######
+#
+# Figure 2 - dispersal kernels of 4 target species by species and treatment
+#
+######
+
+color_cb <- c("#D55E00", "#F0E442", "#009E73", "#0072B2")
+
+pdf(file="Fig_2_herbivore_spp_kernels.pdf",width=10, height=7)
+
+ggplot(disp, aes(x=distance_from_edge, fill=species, color=species))+
+  geom_density(alpha = 0.5)+
+  facet_wrap(facets = "trt")+
+  theme_bw()+
+  theme(aspect.ratio=1)+
+  labs(x="Distance from Core Edge",
+       y="Density",
+       fill = "Species", color = "Species")+
+  theme(text = element_text(size = 22))+
+  scale_fill_manual(values=color_cb)+
+  scale_color_manual(values=color_cb)+ 
+  theme(legend.text = element_text(face = "italic"))
+
+dev.off()
+
+#quantiles for Herbivore trt * species
+quantile(subset(disp, trt == "herbivores")$distance_from_edge, c(0.01, 0.05, 0.25, 0.5, 0.75, 0.95, 0.99))
+
+
+quantile(subset(disp, trt == "herbivores" & species == "P. digitalis")$distance_from_edge, c(0.01, 0.25, 0.5, 0.75, 0.99))
+quantile(subset(disp, trt == "no herbivores" & species == "P. digitalis")$distance_from_edge, c(0.01, 0.25, 0.5, 0.75, 0.99))
+
+quantile(subset(disp, trt == "herbivores" & species == "E. yuccifolium")$distance_from_edge, c(0.01, 0.25, 0.5, 0.75, 0.99))
+quantile(subset(disp, trt == "no herbivores" & species == "E. yuccifolium")$distance_from_edge, c(0.01, 0.25, 0.5, 0.75, 0.99))
+
+quantile(subset(disp, trt == "herbivores" & species == "S. ericoides")$distance_from_edge, c(0.01, 0.25, 0.5, 0.75, 0.99))
+quantile(subset(disp, trt == "no herbivores" & species == "S. ericoides")$distance_from_edge, c(0.01, 0.25, 0.5, 0.75, 0.99))
+
+quantile(subset(disp, trt == "herbivores" & species == "B. alba")$distance_from_edge, c(0.01, 0.25, 0.5, 0.75, 0.99))
+quantile(subset(disp, trt == "no herbivores" & species == "B. alba")$distance_from_edge, c(0.01, 0.25, 0.5, 0.75, 0.99))
+
+
+```
+
+## Stem Abundance
+
+Here we examine how the total number of stems in all plots of our 4 target species differs with herbivore exclusion. 
+
+RESULTS: We see an interaction between the species and the herbivore treatment on the number of established stems - indicating that species respond differently to herbivore treatments.
+
+
+
+```{r, eval=TRUE, echo=TRUE,  warning=FALSE,   message=FALSE, fig.height=5}
+
+
+######
+#
+# Appendix S3: GLMER analysis of number of established stems ~ treatment * species
+#
+######
+
+
+test2.nb <- glmer.nb(total ~ treatment + species  + (1|plot),  data = t_abund, verbose = TRUE)
+Anova(test2.nb, type = 3)
+
+#resid_panel(test2.nb)
+
+
+######
+#
+# Appendix S3: Figure - abundance of 4 target species per treatment
+#
+######
+
+
+
+abund_dat <- t_abund %>% 
+  mutate(treat_nice = case_when(
+    str_detect(treatment, "herbivores") ~ "Herbivores",
+    str_detect(treatment, "no_herb") ~ "No Herbivores")) %>% 
+  mutate(spec_name_nice = case_when(
+    str_detect(species, "pendig") ~ "Penstemon digitalis",
+    str_detect(species, "eryyuc") ~ "Eryngium yuccifolium" ,
+    str_detect(species, "bapalb") ~ "Baptisia alba" , 
+    str_detect(species, "asteri") ~ "Symphyotrichum ericoides"))
+
+
+pdf(file="FigS3_stemabundance.pdf", width=10, height=7)
+
+ggplot(abund_dat, aes(x = spec_name_nice, y = total)) + 
+  geom_boxplot(aes(fill = treat_nice)) + 
+  labs(x = "Species", y = "Number of Individuals" , fill = NULL) + 
+  theme(axis.text.x = element_text(face = "italic"))+
+  theme_bw()+  
+  scale_fill_manual(values=c("gray25", "gray75"))
+
+dev.off()
+```
+
+
+# Community Composition Analyses
+
+## Alpha Diversity
+
+Here we examine the alpha diversity of all moved core species across all treatments (distance, competition (covered/uncovered), herbivores).  We also examined the alpha diveristy of the entire community (all moved species, plus everything else in the core.)
+
+RESULTS: 
+MOVED SPECIES - More core species moved to near plots as opposed to far, covered plots had more core species than uncovered plots, and herbivores did not have an effect on the diversity of core species within the plots.
+ALL SPECIES - When looking at all species, not just the moved species, we found a significant effect of distance, and a marinal effect of competition, and no effect of herbivore treatment.
+
+
+```{r, eval=TRUE, echo=TRUE,  warning=FALSE,  message=FALSE, fig.height=4}
+
+#get only core species
+high_div_move_alpha <- ddply(subset(dat, core_only=="yes"), .(plot, distance, transect, cover_status),
+                             summarize, 
+                             alpha = length(unique(sixletter_code)), 
+                             sum_cover_core = sum(percent_cover))
+
+
+
+#make these factors
+high_div_move_alpha <- left_join(high_div_move_alpha, trt)
+high_div_move_alpha$transect <- as.factor(high_div_move_alpha$transect)
+high_div_move_alpha$plot <- as.factor(high_div_move_alpha$plot)
+
+
+
+######
+#
+# LMER analysis of alpha diversity ~ dispersal * herbivory * competition MOVED SPECIES
+#
+######
+
+test3_lme <- lmer(alpha ~ treatment + cover_status + distance + (1|plot/trans_unique),
+                  data=high_div_move_alpha, REML=TRUE)
+Anova(test3_lme,  type = 3)
+
+
+
+######
+#
+# Figure 3a - alpha diversity with competition and herbivory treatments of MOVED species
+#
+######
+
+# stats summary
+
+
+stats_alpha <- high_div_move_alpha %>%
+              group_by(., distance, cover_status) %>%
+              dplyr::summarize(., mean_alpha = mean(alpha),
+                     se_alpha = sd(alpha)/sqrt(length(alpha)-1),
+                     mean_cover = mean(sum_cover_core),
+                     se_cover = sd(sum_cover_core)/sqrt(length(sum_cover_core)-1),
+                     sd_cover = sd(sum_cover_core))
+
+
+stats_alpha$cover_status <- factor(stats_alpha$cover_status, levels = c("cover", "uncover"),labels = c("low", "high"))
+
+
+
+
+
+Fig3a <- ggplot(stats_alpha, aes(x=cover_status, y=mean_alpha, shape = distance))+
+                geom_errorbar(aes(ymax = mean_alpha + se_alpha, 
+                                  ymin = mean_alpha - se_alpha, 
+                                  color = distance), width = 0.15, lwd = 1.75)+
+                geom_point(cex = 7)+
+                theme_bw()+
+                theme(aspect.ratio=1)+
+                scale_color_manual(values = c("black", "black"))+
+                labs(x="Competition",
+                     y="Richness of Moved Species")+
+                theme(text = element_text(size = 20))
+
+
+```
+
+
+```{r, eval=TRUE, echo=FALSE,  warning=FALSE,  message=FALSE, fig.height=3.5}
+
+#######
+#
+# ALPHA FOR ALL SPECIES
+#
+#######
+
+#summarize data
+alpha_all <- ddply(dat, .(plot, distance, transect, cover_status), summarize, 
+                             alpha = length(unique(sixletter_code)), 
+                             sum_cover_core = sum(percent_cover))
+
+#merge in treatment data
+alpha_all <- merge(alpha_all, trt, by=c("plot", "transect"))
+
+#make these factors
+alpha_all$transect <- as.factor(alpha_all$transect)
+alpha_all$plot <- as.factor(alpha_all$plot)
+
+
+##ALPHA DIVERSITY TEST
+hist(alpha_all$alpha)
+
+test1_all <- lmer(alpha ~ treatment + cover_status + distance  + (1|plot/trans_unique/distance),
+                  data=alpha_all, REML=TRUE)
+Anova(test1_all, test.statistic = "F", type = 3)
+
+######
+#
+# Figure 3b - alpha diversity with competition and herbivory treatments of ALL species
+#
+######
+
+stats_1_all <- alpha_all %>%
+              group_by(., distance, cover_status) %>%
+              dplyr::summarize(., mean_alpha = mean(alpha),
+                     se_alpha = sd(alpha)/sqrt(length(alpha)-1),
+                     mean_cover = mean(sum_cover_core),
+                     se_cover = sd(sum_cover_core)/sqrt(length(sum_cover_core)-1),
+                     sd_cover = sd(sum_cover_core))
+
+#stats_1_all$cover_status <- factor(stats_1_all$cover_status, levels = c("cover", "uncover"),labels = c("low", "high"))
+
+Fig3b  <- ggplot(stats_1_all, aes(x=cover_status, y=mean_alpha, shape = distance))+
+                geom_errorbar(aes(ymax = mean_alpha + se_alpha, 
+                                  ymin = mean_alpha - se_alpha,color = distance), 
+                              width = 0.15, lwd = 1.75)+
+                geom_point(cex = 7)+
+                theme_bw()+
+                theme(aspect.ratio=1)+
+                scale_color_manual(values = c("black", "black"))+
+                labs(x="Competition",y="Richess of All Species")+
+                theme(text = element_text(size = 20))
+
+
+########COMBINE TO MAKE FIG 3
+
+
+test <- plot_grid(Fig3a, Fig3b,
+          labels=c("A","B"),
+          label_size = 24)
+test
+
+ggsave("Fig3_all.jpeg", width = 30, height = 13, units = "cm")
+
+
+
+```
+
+
+## Community Composition
+
+
+Here we examine how all treatments (distance, competition (covered/uncovered), herbivores) altered the community composition of **just** moved core species as these show evidence of assembly into local communities from the regional species pool.
+
+RESULTS: When examining community composition with presence/absence of the moved species community (the community that was able to move from the core and establish in the quadrats), we see that herbivore presence, dispersal distance and competition via priority effects each had a main effect on the composition, but there were no interactions.
+
+
+```{r, eval=TRUE, echo=TRUE,  warning=FALSE, message=FALSE, fig.height=4}
+
+#ORDINATION WITH SPECIES THAT MOVED FROM THE CORE
+
+dat_moved <- movedord[,6:23]
+
+# standardize for presence/absence
+datmoved_d <- decostand(dat_moved, "pa")
+
+#subset environmental data
+dat_env <- movedord[,1:5]
+```
+
+```{r, eval=TRUE, echo=TRUE,  warning=FALSE, results = 'hide', message=FALSE, fig.height=4}
+#dimension check - use k = 3
+dimcheckMDS(datmoved_d, distance = "jaccard", k = 6, trymax = 10, 
+            autotransform = FALSE)
+```
+
+```{r, eval=TRUE, echo=TRUE,  warning=FALSE,  message=FALSE, fig.height=4}
+#create NMDS
+NMDS_core_jaccard <- metaMDS(datmoved_d, distance = "jaccard", k = 3, try = 50, 
+                             trymax = 70, autotransform = F, expand = F, 
+                             trace = FALSE)
+
+#make  distance matrix
+dat.jaccard.moved <- vegdist(datmoved_d, "jaccard")
+
+
+######
+#
+# PERMANOVA for how herbivores, competition and distance influences jaccard dissimilarity in composition,
+#               blocked by plot for moved species
+#
+######
+
+adonis2(dat.jaccard.moved ~ herbivores + cover_status + distance , data = dat_env,
+       strata = dat_env$plot)
+
+
+######
+#
+# Figure S3 - composition differences with treatment (herbivory, competition, dispersal)
+#
+######
+
+
+scores_moved <- scores(NMDS_core_jaccard)
+scores_moved2 <- cbind(scores_moved$sites, dat_env)
+
+col <- c("#80CDC1","#BF812D")
+
+#Covered/Uncovered Plots - 2D
+cover <- ggplot(scores_moved2, aes(x=NMDS1, y=NMDS2, color=cover_status))+
+            geom_point(size = 4)+
+            scale_colour_manual(values=col)+
+            theme_bw()
+
+#Distance plot - 2D
+dist <- ggplot(scores_moved2, aes(x=NMDS1, y=NMDS2, color=distance))+
+            geom_point(size=4)+
+            scale_colour_manual(values=col)+
+            theme_bw()
+
+#herbivores plot - 2D
+herb <- ggplot(scores_moved2, aes(x=NMDS2, y=NMDS1, color=herbivores))+
+            geom_point(size=4)+
+            scale_colour_manual(values=col)+
+            theme_bw()
+
+
+pdf(file="Fig_S3_moved_composition.pdf", width=10, height=7)
+
+plot_grid(cover, dist, herb, 
+          width = 4, height = 6,
+          nrow=3)
+
+dev.off()
+
+```
+
+
+
+# Species Trade-off Analysis
+
+Here we examine which plots species are able to establish in: 1) near vs far plots, 2) competitive vs uncompetitive plots, and 3) herbivores vs no herbivores to determine how species are able to trade off in their ability to withstand different assembly filters as they establish.
+
+## Calculate Occurrence Ratios
+
+Here we calculate occurrence ratios in the different treatments.  
+
+
+```{r, eval=TRUE, echo=TRUE,  warning=FALSE,  message=FALSE, fig.height=4}
+
+## species level movement
+spp_level_move <- subset(dat, core_only=="yes")
+
+
+#######
+#
+# OCCURRENCE - Competition
+#
+#######
+
+
+
+#merge in treatment data
+spp_level_move <- merge(spp_level_move, trt, by=c("plot", "transect"))
+
+#make these factors
+spp_level_move$transect <- as.factor(spp_level_move$transect)
+spp_level_move$plot <- as.factor(spp_level_move$plot)
+
+
+
+## who is moving to uncovered plots over covered plots.
+
+#summarize occurrence of the moved species in covered vs uncovered plots
+comp <- spp_level_move %>%
+    group_by(sixletter_code, cover_status) %>%
+    dplyr::summarize(occurrence = sum(length(sixletter_code))) 
+  
+comp <- comp[,1:3]
+colnames(comp)[3] <- "comp_occurrence"
+
+comp$comp_prop_occurrence <- (comp$comp_occurrence)/64
+
+
+# Replaced all "NA"'s with 0.01, which is just slightly less than plants showing up in 1/64 plots
+#   For the comp. analysis: this NA issue only occurs for plants that are not showing up frequently 
+#     at all (like typically one or two times total), so this keeps the numbers reasonable.
+comp2 <- spread(comp[,-3], key = cover_status, value = comp_prop_occurrence) %>%
+          replace(., is.na(.), 0.01)  
+
+# Here, divide uncover by cover, so a number >1 means competition promotes establishment 
+#       (plants prefer more competition)
+comp2$comp_ratio <- comp2$uncover / comp2$cover
+
+
+
+
+#######
+#
+# OCCURRENCE - Prop Dispersal
+#
+#######
+
+
+#summarize occurrence of the moved species in near and far plots
+disp <- spp_level_move %>%
+    group_by(sixletter_code, distance) %>%
+    dplyr::summarize(occurrence = sum(length(sixletter_code))) 
+  
+disp <- disp[,1:3]
+colnames(disp)[3] <- "disp_occurrence"
+
+disp$disp_prop_occurrence <- (disp$disp_occurrence)/64
+
+
+disp2 <- spread(disp[,-3], key = distance, value = disp_prop_occurrence) %>%
+          replace(., is.na(.), 0.01)  
+
+# Here, divide far by near.  Which means a number > 1 means they disperse farther.
+#
+disp2$disp_ratio <- disp2$far / disp2$near 
+
+
+
+
+#######
+#
+# OCCURRENCE - Prop Herbivore
+#
+#######
+
+
+#summarize occurrence of the moved species in herbivore and no herbivore plots
+herb <- spp_level_move %>%
+    group_by(sixletter_code, treatment) %>%
+    dplyr::summarize(occurrence = sum(length(sixletter_code))) 
+  
+herb <- herb[,1:3]
+colnames(herb)[3] <- "herb_occurrence"
+
+herb$herb_prop_occurrence <- (herb$herb_occurrence)/64
+
+herb2 <- spread(herb[,-3], key = treatment, value = herb_prop_occurrence) %>%
+          replace(., is.na(.), 0.01)  
+
+
+# Here, divide herbivores over no_herbivores, so a number >1 means herbivores promote establishment.
+#
+herb2$herb_ratio <- herb2$herbivores / herb2$no_herbivores
+
+
+
+#######
+#
+# OCCURRENCE - Combining it all
+#
+#######
+
+
+occurrence <- full_join(herb2[,-(2:3)], disp2[,-(2:3)], by = "sixletter_code" ) %>%
+                full_join(., comp2[, -(2:3)], by = "sixletter_code")
+
+tmp_df<-data.frame(occurrence)
+rownames(tmp_df)<-occurrence$sixletter_code
+
+
+### correlation plot - Fig S5
+
+tiff(file="Fig_S5_correlation.tiff")
+
+chart.Correlation(
+  occurrence[,-1],
+  histogram = TRUE,
+  method = c("pearson")
+)
+
+dev.off
+```
+
+```{r, eval=TRUE, echo=TRUE,  warning=FALSE,  message=FALSE, fig.height=7}
+
+col <- c('#543005','#8c510a','#bf812d','#dfc27d','#f6e8c3','#c7eae5','#80cdc1','#35978f','#01665e','#003c30')
+
+
+######
+#
+# Figure 5 - species trade-offs between dispersal, herbivory tolerance and competition ability.  All species labels were added in Adobe after creating the base figure in R.
+#
+######
+
+scatter3D(occurrence$herb_ratio, occurrence$disp_ratio, occurrence$comp_ratio,
+          labels = rownames(occurrence),  clab = c("competition ratio"),
+          col = col,
+          phi = 0, bty ="g", pch = 16, cex = 2,
+          type = "h",
+          ticktype = "detailed",
+          ylim = c(0,1),
+          xlab = "Herbivore Ratio", ylab ="Dispersal Ratio", zlab = "Competition Ratio")
+
+
+
+```
